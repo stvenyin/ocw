@@ -304,6 +304,21 @@ pub mod pallet {
 		}
 
 		fn fetch_price_info() -> Result<(), Error<T>> {
+				let price_result:AssetPolkadot = Self::fetch_parse_price()?;
+			log::info!("price_result is:{:?}",price_result);
+			let price = price_result.data.priceUsd;
+			let price_str= str::from_utf8(&price).map_err(|_|Error::<T>::HttpFetchingError)?;
+			log::info!("price_str is:{}",price_str);
+			let price_vec = price_str.split(".").collect::<Vec<&str>>();
+			log::info!("-----------price_vec is:{:?}",&price_vec);
+			let price_u64 = price_vec[0].parse::<u64>().map_err(|_|Error::<T>::HttpFetchingError)?;
+			let (first,last)=price_vec[1].split_at(5);
+			let price_first = first.parse::<u32>().map_err(|_|Error::<T>::HttpFetchingError)?;
+			let price_result =(price_u64,Permill::from_parts(price_first));
+			Self::call_price_info_unsign(price_u64, price_result.1)?;
+			log::info!("--------------price_result is:{:?}",price_result);
+			// Self::append_or_replace_price(price_result);
+			log::info!("+++++++++++price dequeue is:{:?}",Self::prices()
 			// TODO: 这是你们的功课
 
 			// 利用 offchain worker 取出 DOT 当前对 USD 的价格，并把写到一个 Vec 的存储里，
@@ -311,7 +326,7 @@ pub mod pallet {
 			// 其他价格可丢弃 （就是 Vec 的长度长到 10 后，这时再插入一个值时，要先丢弃最早的那个值）。
 
 			// 取得的价格 parse 完后，放在以下存儲：
-			// pub type Prices<T> = StorageValue<_, VecDeque<(u64, Permill)>, ValueQuery>
+			 pub type Prices<T> = StorageValue<_, VecDeque<(u64, Permill)>, ValueQuery>
 
 			// 这个 http 请求可得到当前 DOT 价格：
 			// [https://api.coincap.io/v2/assets/polkadot](https://api.coincap.io/v2/assets/polkadot)。
